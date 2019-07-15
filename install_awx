@@ -1,8 +1,6 @@
 #!/bin/bash
-#version:0
 
-#Script recapitulant les etapes pour installer AWX
-#A ameliorer
+#version:0.1
 
 #Activer EPEL 
 yum -y install epel-release
@@ -38,3 +36,37 @@ yum -y install rh-python36
 yum -y install --disablerepo='*' --enablerepo='mrmeee-ansible-awx, base' -x *-debuginfo rh-python36*
 
 yum install -y ansible-awx
+
+
+#Initialize DB
+scl enable rh-postgresql10 "postgresql-setup initdb"
+
+#Lancer: Postgresql Database
+systemctl start rh-postgresql10-postgresql.service
+
+#Lancer RabbitMQ
+systemctl start rabbitmq-server
+
+#Creer un utilisateur awx et une base awx
+scl enable rh-postgresql10 "su postgres -c \"createuser -S awx\""
+scl enable rh-postgresql10 "su postgres -c \"createdb -O awx awx\""
+
+#Importer les datas :
+sudo -u awx scl enable rh-python36 rh-postgresql10 "awx-manage migrate"
+
+#Configuration initial de AWX :
+echo "from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'root@localhost', 'password')" | sudo -u awx scl enable rh-python36 rh-postgresql10 "awx-manage shell"
+sudo -u awx scl enable rh-python36 rh-postgresql10 "awx-manage create_preload_data" # Optional Sample Configuration
+sudo -u awx scl enable rh-python36 rh-postgresql10 "awx-manage provision_instance --hostname=$(hostname)"
+sudo -u awx scl enable rh-python36 rh-postgresql10 "awx-manage register_queue --queuename=tower --hostnames=$(hostname)"
+
+#Configuration de NGINX proxy :
+
+wget -O /etc/nginx/nginx.conf https://raw.githubusercontent.com/MrMEEE/awx-build/master/nginx.conf
+
+#Lancer les services
+systemctl start awx
+
+#Autoriser les services au demarrage
+systemctl enable awx
+
