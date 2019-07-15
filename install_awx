@@ -1,0 +1,40 @@
+#!/bin/bash
+#version:0
+
+#Script recapitulant les etapes pour installer AWX
+#A ameliorer
+
+#Activer EPEL 
+yum -y install epel-release
+
+#Activer collection de logiciels
+yum -y install centos-release-scl centos-release-scl-rh
+
+#AWX Repo 
+yum install -y wget
+wget -O /etc/yum.repos.d/ansible-awx.repo https://copr.fedorainfracloud.org/coprs/mrmeee/ansible-awx/repo/epel-7/mrmeee-ansible-awx-epel-7.repo
+
+
+#RabbitMQ and Erlang 
+echo "[bintraybintray-rabbitmq-rpm] 
+name=bintray-rabbitmq-rpm 
+baseurl=https://dl.bintray.com/rabbitmq/rpm/rabbitmq-server/v3.7.x/el/7/
+gpgcheck=0 
+repo_gpgcheck=0 
+enabled=1" > /etc/yum.repos.d/rabbitmq.repo
+
+
+#Installer RabbitMQ
+yum -y install rabbitmq-server
+
+#Installer PostgreSQL et Memcached
+Install PostgreSQL and memcached
+
+#Installer Install NGINX 
+yum -y install nginx
+
+# Installer les dependances Pythons
+yum -y install rh-python36
+yum -y install --disablerepo='*' --enablerepo='mrmeee-ansible-awx, base' -x *-debuginfo rh-python36*
+
+yum install -y ansible-awx
